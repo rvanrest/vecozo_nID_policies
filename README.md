@@ -1,3 +1,10 @@
+> [!CAUTION]
+> DIT IS EEN OFFLINE COPY VAN DE POLICIES BIJ VECOZO ZODAT ER INZICHT GEKREGEN KAN WORDEN IN DE POLICIES  
+> DE REPO ONTVANGT GEEN REGELMATIGE UPDATES
+> 
+> DIT IS DE SITUATIE VAN 20-03-2026
+> 
+
 # ![logo](./assets/logo-144x144.png) Policies
 
 Deze repository bevat alle autorisatiepolicies die binnen de iWlz-keten worden gebruikt. Deze policies, geschreven in Rego, stellen Open Policy Agent (OPA) in staat om te beslissen of een cliënt toegang heeft tot de aangevraagde resources.
