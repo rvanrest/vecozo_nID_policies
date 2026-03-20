@@ -1,0 +1,154 @@
+meta {
+  name: 400_POL109_5_with_subentities_without_overdrachtdatum
+  type: graphql
+  seq: 5
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Overdracht($overdrachtID: UUID!, $VerantwoordelijkZorgkantoor: String!) {
+    overdracht(
+      where: {
+        overdrachtID: { eq: $overdrachtID }
+        verantwoordelijkZorgkantoor: { eq: $VerantwoordelijkZorgkantoor }
+      }
+    ) {
+      overdrachtID
+      verantwoordelijkZorgkantoor
+      overdrachtDatum
+      verhuisDatum
+      vaststellingMoment
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          clientID
+          bsn
+          leefeenheid
+          huisarts
+          communicatievorm
+          taal
+          contactgegevens {
+            clientContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisletter
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+          contactpersoon {
+            contactpersoonID
+            contactgegevens {
+              contactpersoonContactgegevensID
+              adressoort
+              straatnaam
+              huisnummer
+              huisnummertoevoeging
+              postcode
+              plaatsnaam
+              land
+              emailadres
+              telefoonnummer01
+              landnummer01
+              telefoonnummer02
+              landnummer02
+              ingangsdatum
+              einddatum
+            }
+            relatienummer
+            volgorde
+            soortRelatie
+            rol
+            relatienummer
+            geslachtsnaam
+            voorvoegselGeslachtsnaam
+            voornamen
+            voorletters
+            roepnaam
+            naamgebruik
+            geslacht
+            geboortedatum
+            geboortedatumgebruik
+            ingangsdatum
+            einddatum
+          }
+        }
+        regiehouder {
+          regiehouderID
+          instelling
+          ingangsdatum
+          einddatum
+          regierol
+        }
+      }
+      overdrachtspecificatie {
+        overdrachtspecificatieID
+        leveringsstatus
+        leveringsstatusClassificatie
+        oorspronkelijkeToewijzingEinddatum
+        bemiddelingspecificatie {
+          bemiddelingspecificatieID
+          leveringsvorm
+          zzpCode
+          toewijzingIngangsdatum
+          toewijzingEinddatum
+          instelling
+          uitvoerendZorgkantoor
+          vaststellingMoment
+          percentage
+          opname
+          redenIntrekking
+          etmalen
+          instellingBestemming
+          soortToewijzing
+        }
+      }
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+    "overdrachtID": "c37239b0-9e3d-4c00-88fd-01f37e590fc0",
+    "VerantwoordelijkZorgkantoor": "5151"
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains A where 'overdrachtDatum' equals is required when querying a subentity of an 'overdracht'.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","uzovi:5151")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

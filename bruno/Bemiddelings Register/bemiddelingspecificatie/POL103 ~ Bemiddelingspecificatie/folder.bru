@@ -1,0 +1,32 @@
+meta {
+  name: POL103 ~ Bemiddelingspecificatie
+}
+
+auth {
+  mode: none
+}
+
+docs {
+  # POL103
+  
+  ## Criteria 
+  
+  Criteria 1: Raadplegen specifieke BemSpec op basis van BemSpecID  
+  Criteria 2: Actor is de instelling van de BemSpec  
+  Criteria 3: Cliëntentiteiten moeten in periode overlappen met de BemSpec  
+  Criteria 4: Toegang tot cliëntsubentiteiten geldt tot 2 jaar na einddatum BemSpec  
+  Criteria 5: Regiehouder + andere BemSpecs binnen de BemSpec moeten in periode overlappen  
+  Criteria 6: Toegang tot bemiddeling subentiteiten geldt tot 31 mei van het opvolgende jaar  
+  Criteria 7: Bij leveringsvorm PGB mag het PGB-percentage niet bevraagd worden  
+  
+  ### Verplichte Input:
+  -   BemiddelingsspecificatieID: UUID!  
+  -   Instelling: String!  
+  
+  ### Overige Input:
+  -   $ToewijzingIngangsdatum: Date!  
+  
+  ## Notities
+  Instelling is een AGB-code.  
+  Het is nu ingesteld om een certificaat met de AGB-code: 51510101 te gebruiken.
+}

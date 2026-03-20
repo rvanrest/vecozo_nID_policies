@@ -1,0 +1,160 @@
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include: 
+    - "policies/*"
+    - "tests/*"
+pr: none
+
+resources:
+  repositories:
+    - repository: NidToolbox
+      type: git
+      name: Products/NidToolbox
+      ref: refs/heads/main
+
+parameters:
+  - name: "policies"
+    displayName: "OPA policy bundles"
+    type: object
+    default:
+      - "registers"
+
+variables:
+  subscription: "AZP-VEC-DEV-CD"
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+    acrSubscription: "AZP-VEC-SHR-CD"
+  ${{ else }}:
+    acrSubscription: "AZP-VEC-SHR-YAML"
+  subscriptionCode: "0d97"
+  subscriptionId: "2730d97e-bd0e-447c-b61d-53fe68ba27bd"
+  tenant: vec
+  region: weu
+  environmentLetter: d
+  acrName: "vecssvccontainerregistry"
+  acrConnection: "AZP-VEC-SHR-ACR-SVC"
+  testsResultFolder: "$(Build.SourcesDirectory)/tests/integration_tests_results"
+  repositoryFolder: "policy/bundles"
+  version: '$(Build.BuildNumber)'
+  nidToolboxDirectory: "$(Build.SourcesDirectory)/NidToolbox"
+  nidPoliciesDirectory: "$(Build.SourcesDirectory)/NidIwlz"
+
+stages:
+- stage: BuildOpaBundle
+  displayName: Build OPA Bundle
+  jobs:
+  - ${{ each policy in parameters.policies }}:
+    - job: ValidateAndBuildPolicyBundle_${{ policy }}
+      displayName: Validate and Build Policy Bundle '${{ policy }}'
+      pool:
+        name: "VEC Linux Build Agents"    
+      variables:
+        policy: '${{ policy }}'
+      steps:
+      - checkout: self
+        path: "s/NidIwlz"
+      - checkout: NidToolbox 
+
+      #Build
+      - template: .azuredevops/templates/opa-bundle-prepare-template.yaml@NidToolbox
+        parameters:
+          nidToolboxDirectory: "$(nidToolboxDirectory)"
+
+      - template: .azuredevops/templates/opa-bundle-build-template.yaml@NidToolbox
+        parameters:
+          nidToolboxDirectory: "$(nidToolboxDirectory)"
+          policiesDirectory: "$(nidPoliciesDirectory)/policies"
+          policy: '${{ policy }}'
+          testsResultFolder: '$(testsResultFolder)'
+          subscription: '$(subscription)'
+          subscriptionId: '$(subscriptionId)'
+          keyVault: $(tenant)-$(region)-$(environmentLetter)-kv-env-$(subscriptionCode)
+          opaSigningEnabled: true
+          opaPrivateKeyName: vec-$(region)-$(environmentLetter)-nid-opa-signing-privatekey
+          opaPublicKeyName: vec-$(region)-$(environmentLetter)-nid-opa-signing-publickey
+
+- stage: PublishOpaBundle
+  displayName: Publish OPA Bundle
+  pool:
+    name: "VEC Linux Build Agents"  
+  jobs: 
+  - template: .azuredevops/templates/acr/publish-acr-bundle-template.yaml@NidToolbox
+    parameters:
+      policies: '${{ parameters.policies }}'
+      repositoryFolder: '$(repositoryFolder)'
+      acrName: '$(acrName)'
+      acrConnection: '$(acrConnection)'
+      version: '$(version)'
+
+#Release
+#DEV
+- stage: ReleaseDevOpaBundle
+  displayName: Release DEV OPA Bundle
+  jobs:
+  - template: .azuredevops/templates/acr/release-acr-bundle-template.yaml@NidToolbox
+    parameters: 
+      policies: '${{ parameters.policies }}'
+      env: 'DEV'
+      releaseEnvironment: 'AKS-VEC-DEV'
+      newTag: 'dev'
+      repositoryFolder: '$(repositoryFolder)'
+      acrName: '$(acrName)'
+      subscription: '$(acrSubscription)'
+
+#OTI
+- stage: ReleaseOtiOpaBundle
+  displayName: Release OTI OPA Bundle
+  jobs:
+  - template: .azuredevops/templates/acr/release-acr-bundle-template.yaml@NidToolbox
+    parameters: 
+      policies: '${{ parameters.policies }}'
+      env: 'DEV'
+      releaseEnvironment: 'AKS-VEC-DEV'
+      newTag: 'oti'
+      repositoryFolder: '$(repositoryFolder)'
+      acrName: '$(acrName)'
+      subscription: '$(acrSubscription)'
+
+#TST
+- stage: ReleaseTstOpaBundle
+  displayName: Release TST OPA Bundle
+  jobs:
+  - template: .azuredevops/templates/acr/release-acr-bundle-template.yaml@NidToolbox
+    parameters: 
+      policies: '${{ parameters.policies }}'
+      env: 'TST'
+      releaseEnvironment: 'AKS-VEC-TST'
+      newTag: 'tst'
+      repositoryFolder: '$(repositoryFolder)'
+      acrName: '$(acrName)'
+      subscription: '$(acrSubscription)'
+
+#ACC
+- stage: ReleaseAccOpaBundle
+  displayName: Release ACC OPA Bundle
+  jobs:
+  - template: .azuredevops/templates/acr/release-acr-bundle-template.yaml@NidToolbox
+    parameters: 
+      policies: '${{ parameters.policies }}'
+      env: 'TST'
+      releaseEnvironment: 'AKS-VEC-TST'
+      newTag: 'acc'
+      repositoryFolder: '$(repositoryFolder)'
+      acrName: '$(acrName)'
+      subscription: '$(acrSubscription)'
+
+#PRD
+- stage: ReleasePrdOpaBundle
+  displayName: Release PRD OPA Bundle
+  jobs:
+  - template: .azuredevops/templates/acr/release-acr-bundle-template.yaml@NidToolbox
+    parameters: 
+      policies: '${{ parameters.policies }}'
+      env: 'PRD'
+      releaseEnvironment: 'AKS-VEC-PRD'
+      newTag: 'prd'
+      repositoryFolder: '$(repositoryFolder)'
+      acrName: '$(acrName)'
+      subscription: '$(acrSubscription)'

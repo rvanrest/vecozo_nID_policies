@@ -1,0 +1,62 @@
+meta {
+  name: 200_POL113_2_pip_bemiddelingsregister_getbemiddeling
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query GetBemiddeling($wlzIndicatieID: UUID!, $zorgkantoor: String!) {
+    bemiddeling(
+      where: {
+        wlzIndicatieID: { eq: $wlzIndicatieID }
+        verantwoordelijkZorgkantoor: { neq: $zorgkantoor }
+        or: [
+          {
+            bemiddelingspecificatie: {
+              some: { uitvoerendZorgkantoor: { eq: $zorgkantoor } }
+            }
+          }
+          {
+            overdracht: {
+              verantwoordelijkZorgkantoor: { eq: $zorgkantoor } 
+            }
+          }
+        ]
+      }
+    ) {
+      wlzIndicatieID
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "wlzIndicatieID": "65de8a13-0988-4795-99d6-6b886d70fa6c",
+    "zorgkantoor": "5501"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","kvk:18065868")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getEnvVar("graphql-url-bemreg"))
+  const requestResponse = await bru.runRequest("token");
+}

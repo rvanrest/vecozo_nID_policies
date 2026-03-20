@@ -1,0 +1,218 @@
+meta {
+  name: 400_POL101_6_no_instelling
+  type: graphql
+  seq: 5
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Regiehouder(
+    $RegiehouderID: UUID!
+    $IngangsDatum: Date!
+    $EindDatum: Date!
+  ) {
+    regiehouder(
+      where: {
+        regiehouderID: { eq: $RegiehouderID }
+        ingangsdatum: { eq: $IngangsDatum }
+        einddatum: { eq: $EindDatum}
+      }
+    ) {
+      regiehouderID
+      instelling
+      ingangsdatum
+      einddatum
+      regierol
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        bemiddelingspecificatie(
+          where: {
+            and: [
+              {
+                or: [
+                  { toewijzingEinddatum: { eq: null } }
+                  { toewijzingEinddatum: { gte: $IngangsDatum } }
+                ]
+              }
+              { toewijzingIngangsdatum: { ngt: $EindDatum } }
+            ]
+          }
+        ) {
+          bemiddelingspecificatieID
+          leveringsvorm
+          zzpCode
+          toewijzingIngangsdatum
+          toewijzingEinddatum
+          instelling
+          uitvoerendZorgkantoor
+          vaststellingMoment
+          percentage
+          opname
+          redenIntrekking
+          etmalen
+          instellingBestemming
+          soortToewijzing
+        }
+        regiehouder(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $IngangsDatum } }
+                  ]
+                }
+                { ingangsdatum: { ngt: $EindDatum } }
+              ]
+            }
+          ) {
+            regiehouderID
+            instelling
+            ingangsdatum
+            einddatum
+            regierol
+          }
+              client {
+          bsn
+          contactpersoon(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $IngangsDatum } }
+                  ]
+                }
+                { ingangsdatum: { ngt: $EindDatum } }
+              ]
+            }
+          ) {
+            contactpersoonID
+            relatienummer
+            volgorde
+            soortRelatie
+            rol
+            relatie
+            geslachtsnaam
+            voorvoegselGeslachtsnaam
+            partnernaam
+            voorvoegselPartnernaam
+            voornamen
+            voorletters
+            roepnaam
+            naamgebruik
+            geslacht
+            geboortedatum
+            geboortedatumgebruik
+            ingangsdatum
+            einddatum
+            contactgegevens(
+              where: {
+                and: [
+                  {
+                    or: [
+                      { einddatum: { eq: null } }
+                      { einddatum: { gte: $IngangsDatum } }
+                    ]
+                  }
+                  { ingangsdatum: { ngt: $EindDatum } }
+                ]
+              }
+            ) {
+              contactpersoonContactgegevensID
+              adressoort
+              straatnaam
+              huisnummer
+              huisletter
+              huisnummertoevoeging
+              postcode
+              plaatsnaam
+              land
+              aanduidingWoonadres
+              emailadres
+              telefoonnummer01
+              landnummer01
+              telefoonnummer02
+              landnummer02
+              ingangsdatum
+              einddatum
+            }
+          }
+          leefeenheid
+          huisarts
+          communicatievorm
+          taal
+          contactgegevens(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $IngangsDatum } }
+                  ]
+                }
+                { ingangsdatum: { ngt: $EindDatum } }
+              ]
+            }
+          ) {
+            clientContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisletter
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            aanduidingWoonadres
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+      "RegiehouderID": "d3cc9f34-e106-41c8-b81f-733b5795c33f",
+      "IngangsDatum": "2025-01-30",
+      "EindDatum": "2026-01-30"
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains A where 'instelling' equals is required.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","agbcode:51510101")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+  
+}

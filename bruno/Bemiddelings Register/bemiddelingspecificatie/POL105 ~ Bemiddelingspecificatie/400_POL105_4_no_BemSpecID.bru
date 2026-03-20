@@ -1,0 +1,80 @@
+meta {
+  name: 400_POL105_4_no_BemSpecID
+  type: graphql
+  seq: 4
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Bemiddelingspecificatie(
+    $BemiddelingspecificatieID: UUID!
+    $UitvoerendZorgkantoor: String!
+  ) {
+    bemiddelingspecificatie(
+      where: {
+        uitvoerendZorgkantoor: { eq: $UitvoerendZorgkantoor }
+      }
+    ) {
+      bemiddelingspecificatieID
+      leveringsvorm
+      zzpCode
+      toewijzingIngangsdatum
+      toewijzingEinddatum
+      instelling
+      uitvoerendZorgkantoor
+      vaststellingMoment
+      percentage
+      opname
+      redenIntrekking
+      etmalen
+      instellingBestemming
+      soortToewijzing
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          bsn
+          clientID
+          taal
+          communicatievorm
+          huisarts
+          leefeenheid
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+      "UitvoerendZorgkantoor": "5151"
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains A where \'bemiddelingspecificatieID\' equals is required.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","uzovi:5151")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

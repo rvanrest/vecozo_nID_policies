@@ -1,0 +1,70 @@
+meta {
+  name: 400_POL214_4_MUTATIE_CLIENT_as_agb
+  type: graphql
+  seq: 5
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  mutation ZendNotificatie($notificatieInput: NotificatieInput!) {
+    zendNotificatie(notificatieInput: $notificatieInput) {
+      afzenderID
+      afzenderIDType
+      eventType
+      ontvangerID
+      ontvangerIDType
+      ontvangerKenmerk
+      timestamp
+      subjectList {
+        recordID
+        subject
+      }
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+    "notificatieInput": {
+      "timestamp": "2024-06-01T00:00:00Z",
+      "afzenderIDType": "AGB",
+      "afzenderID": "51510101",
+      "eventType": "MUTATIE_CLIENT",
+      "ontvangerIDType": "KVK",
+      "ontvangerID": "18065868",
+      "ontvangerKenmerk": "",
+      "subjectList": [
+        {
+          "subject": "client/8d34ee18-e442-42a0-b2bf-adb31fc3d311",
+          "recordID": "client/8d34ee18-e442-42a0-b2bf-adb31fc3d311"
+        }
+      ]
+    }
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains ZendNotificatie mutation: afzender_type is not valid.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","agbcode:06548732")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","organisaties/onderneming/notificaties/notificatie:create")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

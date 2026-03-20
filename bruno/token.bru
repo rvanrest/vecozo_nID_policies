@@ -1,0 +1,100 @@
+meta {
+  name: token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{token_url}}/token
+  body: json
+  auth: inherit
+}
+
+headers {
+  client-cert-subject: 40000000100502
+}
+
+body:json {
+  {
+    "grant_type": "client_credentials",
+    "scope": "{{scope}}",
+    "audience": "{{graphql-url}}",
+    "access_token": {
+      "sub": "{{impersonation}}"
+    }
+  }
+}
+
+vars:pre-request {
+  impersonation: 
+  scope: 
+  graphql-url: 
+}
+
+script:pre-request {
+  function generateHexId(length) {
+      let id = '';
+      for (let i = 0; i < length; i++) {
+          const randomHex = Math.floor(Math.random() * 16).toString(16);
+          id += randomHex;
+      }
+      return id;
+  }
+  
+  function generateTraceAndSpanIds() {
+      const traceId = generateHexId(32);
+      const spanId = generateHexId(16); 
+      return {
+          traceId: traceId,
+          spanId: spanId
+      };
+  }
+  
+  const ids = generateTraceAndSpanIds();
+  console.log(`X-B3 Trace ID: ${ids.traceId}`);
+  console.log(`X-B3 Span ID: ${ids.spanId}`);
+              
+  bru.setVar("b3_traceId", ids.traceId)
+  bru.setVar("b3_spanId", ids.spanId)
+  bru.setVar('traceparent', `00-${ids.traceId}-${ids.spanId}-01`);
+}
+
+script:post-response {
+  console.log("graphql endpoint", req.body)
+  
+  bru.setVar("jwt_token", res.body.access_token)
+  
+  let jwtData = parseJwt(res.body.access_token);
+  let claims = parseJwt(jwtData._claim_sources.localhost.jwt)
+  
+  console.log("graphql endpoint", jwtData.sub)
+  console.log("scope", jwtData.scopes[0])
+  console.log("claims",claims)
+  
+  
+  function parseJwt (token) {
+      return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+  }
+}
+
+docs {
+  # Info
+  This is a request that is run in all pre-scripts to get a token.
+  
+  # How to Use in Your Requests
+  
+  In the request pre-script, add the following: 
+  ```javascript
+  bru.setVar("impersonation", ""); // Possible variables: "", "agbcode:XXXX", "uzovi:XXX", "kvk:XXXX"
+  bru.setVar("scope", "registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read"); // Set the scope in the token
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url")); 
+  const requestResponse = await bru.runRequest("token");
+  ```
+  
+  Notes:
+  
+  - **Graphql-url**: The GraphQL URL is set by the `graphql-url` variable of one of the parent folders of the requests. For example, in the Bemiddelingsregister -> POL102 structure, when you add the variable `graphql-url` in the Bemiddelingsregister folder, it will apply to the requests within that folder.
+  
+  - **Impersonation**: To use impersonation, ensure that the client certificate is allowed to impersonate the given value.
+  
+}

@@ -1,0 +1,186 @@
+meta {
+  name: 200_POL106_3_vaststellingmoment_before_ingangsdatum
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Bemiddelingspecificatie(
+    $BemiddelingspecificatieID: UUID!
+    $UitvoerendZorgkantoor: String!
+    $ToewijzingIngangsdatum: Date!
+    $ToewijzingEinddatum: Date!
+    $VaststellingMoment: DateTime!
+    $DagVaststellingMoment: Date!
+  ) {
+    bemiddelingspecificatie(
+      where: {
+        bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+        uitvoerendZorgkantoor: { eq: $UitvoerendZorgkantoor }
+        toewijzingIngangsdatum: { eq: $ToewijzingIngangsdatum }
+        toewijzingEinddatum: { eq: $ToewijzingEinddatum }
+        vaststellingMoment: { eq: $VaststellingMoment }
+      }
+    ) {
+      bemiddelingspecificatieID
+      leveringsvorm
+      zzpCode
+      toewijzingIngangsdatum
+      toewijzingEinddatum
+      instelling
+      uitvoerendZorgkantoor
+      vaststellingMoment
+      percentage
+      pgbPercentage
+      opname
+      redenIntrekking
+      etmalen
+      instellingBestemming
+      soortToewijzing
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          bsn
+          contactpersoon(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $ToewijzingIngangsdatum } }
+                    { einddatum: { gte: $DagVaststellingMoment } }
+                  ]
+                }
+              ]
+            }
+          ) {
+            naam
+            voornaam
+            tussenvoegsels
+            geslacht
+            geboortedatum
+            bsn
+            emailadres
+            telefoonnummer
+            ingangsdatum
+            einddatum
+          }
+          contactgegevens(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $ToewijzingIngangsdatum } }
+                    { einddatum: { gte: $DagVaststellingMoment } }
+                  ]
+                }
+              ]
+            }
+          ) {
+            straatnaam
+            huisnummer
+            huisnummertoevoeging
+            postcode
+            woonplaats
+            ingangsdatum
+            einddatum
+          }
+        }
+        regiehouder(
+          where: {
+            and: [
+              {
+                or: [
+                  { einddatum: { eq: null } }
+                  { einddatum: { gte: $ToewijzingIngangsdatum } }
+                  { einddatum: { gte: $DagVaststellingMoment } }
+                ]
+              }
+            ]
+          }
+        ) {
+          agb
+          naam
+          kvknummer
+          ingangsdatum
+          einddatum
+          regierol
+        }
+      }
+      bemiddelingspecificatie(
+        where: {
+          and: [
+            {
+              or: [
+                { einddatum: { eq: null } }
+                { einddatum: { gte: $ToewijzingIngangsdatum } }
+                { einddatum: { gte: $DagVaststellingMoment } }
+              ]
+            }
+          ]
+        }
+      ) {
+        leveringsvorm
+        zzpCode
+        toewijzingIngangsdatum
+        toewijzingEinddatum
+        instelling
+        uitvoerendZorgkantoor
+        vaststellingMoment
+        percentage
+        pgbPercentage
+        opname
+        redenIntrekking
+        etmalen
+        instellingBestemming
+        soortToewijzing
+        ingangsdatum
+        einddatum
+      }
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+    "BemiddelingspecificatieID": "3b06e80c-633c-48cf-8c69-38f9b9567784",
+    "UitvoerendZorgkantoor": "5151",
+    "ToewijzingIngangsdatum": "2024-04-17",
+    "ToewijzingEinddatum": "2026-12-31",
+    "VaststellingMoment": "2025-06-01T10:15:30.150Z",
+    "DagVaststellingMoment": "2025-06-01"
+  }
+  
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","uzovi:5151")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+  
+}

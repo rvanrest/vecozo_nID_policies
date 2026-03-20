@@ -1,0 +1,94 @@
+meta {
+  name: 400_POL109_4_verkeerd_verantwoordelijk_zorgkantoor
+  type: graphql
+  seq: 4
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Overdracht($overdrachtID: UUID!, $VerantwoordelijkZorgkantoor: String!) {
+    overdracht(
+      where: {
+        overdrachtID: { eq: $overdrachtID }
+        verantwoordelijkZorgkantoor: { eq: $VerantwoordelijkZorgkantoor }
+      }
+    ) {
+      overdrachtID
+      verantwoordelijkZorgkantoor
+      overdrachtDatum
+      verhuisDatum
+      vaststellingMoment
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          clientID
+          bsn
+          leefeenheid
+          huisarts
+          communicatievorm
+          taal
+        }
+      }
+      overdrachtspecificatie {
+        overdrachtspecificatieID
+        leveringsstatus
+        leveringsstatusClassificatie
+        oorspronkelijkeToewijzingEinddatum
+        bemiddelingspecificatie {
+          bemiddelingspecificatieID
+          leveringsvorm
+          zzpCode
+          toewijzingIngangsdatum
+          toewijzingEinddatum
+          instelling
+          uitvoerendZorgkantoor
+          vaststellingMoment
+          percentage
+          opname
+          redenIntrekking
+          etmalen
+          instellingBestemming
+          soortToewijzing
+        }
+      }
+      # overige entiteiten mogen zonder overdachtdatum niet geraadpleegd worden
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+    "overdrachtID": "c37239b0-9e3d-4c00-88fd-01f37e590fc0",
+    "VerantwoordelijkZorgkantoor": "5252"
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains  A where \'verantwoordelijkZorgkantoor\' equals is required and must be set to your uzovi.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","uzovi:5151")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

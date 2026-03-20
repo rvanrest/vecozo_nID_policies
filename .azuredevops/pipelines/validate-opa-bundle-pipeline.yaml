@@ -1,0 +1,64 @@
+trigger: none
+pr:
+  branches: 
+    include: 
+    - main
+  paths:
+    include: 
+    - "policies/*"
+    - "tests/*"
+
+parameters:
+  - name: "policies"
+    displayName: "OPA policy bundles"
+    type: object
+    default:
+      - "registers"
+
+resources:
+  repositories:
+    - repository: NidToolbox
+      type: git
+      name: Products/NidToolbox
+      ref: refs/heads/main
+
+variables:
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+    subscription: "AZP-VEC-DEV-Services-CD"
+  ${{ else }}:
+    subscription: "AZP-VEC-DEV-Services-YAML"
+  subscriptionCode: "0d97"
+  subscriptionId: "2730d97e-bd0e-447c-b61d-53fe68ba27bd"
+  tenant: vec
+  region: weu
+  environmentLetter: d
+  testsResultFolder: "$(Build.SourcesDirectory)/tests/integration_tests_results"
+  nidToolboxDirectory: "$(Build.SourcesDirectory)/NidToolbox"
+  nidPoliciesDirectory: "$(Build.SourcesDirectory)/NidIwlz"
+
+jobs:
+- ${{ each policy in parameters.policies }}:
+  - job: ValidateAndBuildPolicyBundle_${{ policy }}
+    displayName: Validate and Build Policy Bundle '${{ policy }}'
+    pool:
+      name: "VEC Linux Build Agents"    
+    steps:
+    - checkout: self
+      path: "s/NidIwlz"
+    - checkout: NidToolbox 
+    - template: .azuredevops/templates/opa-bundle-prepare-template.yaml@NidToolbox
+      parameters:
+        nidToolboxDirectory: $(nidToolboxDirectory)
+    - template: .azuredevops/templates/opa-bundle-build-template.yaml@NidToolbox
+      parameters:
+        policiesDirectory: "$(nidPoliciesDirectory)/policies"
+        policy: '${{ policy }}'
+        testsResultFolder: '$(testsResultFolder)'
+        subscription: '$(subscription)'
+        subscriptionId: '$(subscriptionId)'
+        opaSigningEnabled: true
+        keyVault: $(tenant)-$(region)-$(environmentLetter)-kv-env-$(subscriptionCode)
+        opaPrivateKeyName: vec-$(region)-$(environmentLetter)-nid-opa-signing-privatekey
+        opaPublicKeyName: vec-$(region)-$(environmentLetter)-nid-opa-signing-publickey
+        nidToolboxDirectory: $(nidToolboxDirectory)
+        

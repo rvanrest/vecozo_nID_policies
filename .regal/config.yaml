@@ -1,0 +1,39 @@
+rules:
+  imports:
+    import-shadows-builtin:
+      level: error
+      ignore:
+        files:
+        # rego package "provider" should not be used as package name as it shadows the built-in provider package
+        # https://docs.styra.com/regal/rules/imports/import-shadows-builtin
+        # simply renaming this will break the current auth server configuration, as it looks for the claims provider using this package name
+        # when fixing this also update the auth server configuration
+        - "security_test.rego"
+        - "vecozo_claims_provider_test.rego"
+
+    pointless-import:
+      # Temporarily disabled, as the current OPA is < V1.5
+      level: ignore
+
+  testing:
+    print-or-trace-call:
+      level: error
+      ignore:
+        files:
+          - "integration_test.rego"
+
+  style:
+    line-length:
+      level: error
+      ignore:
+        files:
+          - "*_test.rego"
+
+  idiomatic:
+    prefer-equals-comparison:
+      level: ignore
+
+project:
+  roots:
+  - policies/claims/bundle
+  - policies/registers/bundle

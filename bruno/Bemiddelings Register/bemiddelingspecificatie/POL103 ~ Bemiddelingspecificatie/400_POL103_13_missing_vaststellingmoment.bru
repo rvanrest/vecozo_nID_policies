@@ -1,0 +1,122 @@
+meta {
+  name: 400_POL103_13_missing_vaststellingmoment
+  type: graphql
+  seq: 13
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Bemiddelingspecificatie(
+    $BemiddelingspecificatieID: UUID!
+    $Instelling: String!
+    $ToewijzingIngangsdatum: Date!
+    $ToewijzingEinddatum: Date!
+    $DagVaststellingMoment: Date!
+  ) {
+    bemiddelingspecificatie(
+      where: {
+        bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+        instelling: { eq: $Instelling }
+        toewijzingIngangsdatum: { eq: $ToewijzingIngangsdatum }
+        toewijzingEinddatum: { eq: $ToewijzingEinddatum }
+      }
+    ) {
+      bemiddelingspecificatieID
+      leveringsvorm
+      zzpCode
+      toewijzingIngangsdatum
+      toewijzingEinddatum
+      instelling
+      uitvoerendZorgkantoor
+      vaststellingMoment
+      percentage
+      opname
+      redenIntrekking
+      etmalen
+      instellingBestemming
+      soortToewijzing
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          bsn
+          contactpersoon(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $ToewijzingIngangsdatum } }
+                    { einddatum: { gte: $DagVaststellingMoment } }
+                  ]
+                }
+                { ingangsdatum: { ngt: $ToewijzingEinddatum } }
+              ]
+            }
+          ) {
+            contactpersoonID
+            relatienummer
+            volgorde
+            soortRelatie
+            rol
+            relatie
+            geslachtsnaam
+            voorvoegselGeslachtsnaam
+            partnernaam
+            voorvoegselPartnernaam
+            voornamen
+            voorletters
+            roepnaam
+            naamgebruik
+            geslacht
+            geboortedatum
+            geboortedatumgebruik
+            ingangsdatum
+            einddatum
+          }
+        }
+      }
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+    "BemiddelingspecificatieID": "c37239b0-9e3d-4c00-88fd-01f37e590fc0",
+    "Instelling": "51510101",
+    "ToewijzingIngangsdatum": "2024-02-21",
+    "ToewijzingEinddatum": "2025-12-31",
+    "DagVaststellingMoment": "2023-06-01"
+  }
+  
+}
+
+assert {
+  res.status: eq 400
+  res.body: contains "A where 'vaststellingMoment' equals is required when querying a subentity"
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","agbcode:51510101")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+  
+}

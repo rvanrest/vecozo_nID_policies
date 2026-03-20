@@ -1,0 +1,148 @@
+meta {
+  name: 200_DIRECT_get_all_overdracht
+  type: graphql
+  seq: 5
+}
+
+post {
+  url: {{graphql-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query GetAllOverdrachten {
+    overdracht {
+      overdrachtID
+      verantwoordelijkZorgkantoor
+      overdrachtDatum
+      verhuisDatum
+      vaststellingMoment
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          clientID
+          bsn
+          leefeenheid
+          huisarts
+          communicatievorm
+          taal
+          contactpersoon {
+            contactpersoonID
+            relatienummer
+            volgorde
+            soortRelatie
+            rol
+            relatie
+            geslachtsnaam
+            voorvoegselGeslachtsnaam
+            partnernaam
+            voorvoegselPartnernaam
+            voornamen
+            voorletters
+            roepnaam
+            naamgebruik
+            geslacht
+            geboortedatum
+            geboortedatumgebruik
+            ingangsdatum
+            einddatum
+            contactgegevens {
+              contactpersoonContactgegevensID
+              adressoort
+              straatnaam
+              huisnummer
+              huisletter
+              huisnummertoevoeging
+              postcode
+              plaatsnaam
+              land
+              aanduidingWoonadres
+              emailadres
+              telefoonnummer01
+              landnummer01
+              telefoonnummer02
+              landnummer02
+              ingangsdatum
+              einddatum
+            }
+          }
+          contactgegevens {
+            clientContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisletter
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            aanduidingWoonadres
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+        }
+        regiehouder {
+          regiehouderID
+          instelling
+          ingangsdatum
+          einddatum
+          regierol
+        }
+        bemiddelingspecificatie {
+          bemiddelingspecificatieID
+          leveringsvorm
+          zzpCode
+          toewijzingIngangsdatum
+          instelling
+          uitvoerendZorgkantoor
+          vaststellingMoment
+          toewijzingEinddatum
+          percentage
+          pgbPercentage
+          opname
+          redenIntrekking
+          etmalen
+          instellingBestemming
+          soortToewijzing
+          overdrachtspecificatie {
+            overdrachtspecificatieID
+            leveringsstatus
+            leveringsstatusClassificatie
+            oorspronkelijkeToewijzingEinddatum
+          }
+        }
+      }
+      overdrachtspecificatie {
+        overdrachtspecificatieID
+        leveringsstatus
+        leveringsstatusClassificatie
+        oorspronkelijkeToewijzingEinddatum
+      }
+    }
+  }
+}
+
+script:pre-request {
+  // if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+  //   bru.setVar("impersonation","uzovi:5000")
+  // }else{
+  //   bru.setVar("impersonation","")
+  // }
+  // bru.setVar("scope","registers/wlzindicatieregister/indicaties:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  // const requestResponse = await bru.runRequest("token");
+}

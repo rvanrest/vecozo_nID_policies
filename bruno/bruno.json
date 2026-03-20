@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "name": "nID - Collection",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "clientCertificates": {
+    "enabled": true,
+    "certs": [
+      {
+        "domain": "{{vec-base}}",
+        "type": "pfx",
+        "pfxFilePath": "{{client-certificate}}",
+        "passphrase": "{{client-certificate-password}}"
+      }
+    ]
+  }
+}

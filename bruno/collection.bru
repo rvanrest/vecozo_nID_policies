@@ -1,0 +1,28 @@
+meta {
+  name: nID - Collection
+  seq: 1
+}
+
+headers {
+  x-b3-traceid: {{b3_traceId}}
+  x-b3-spanid: {{b3_spanId}}
+  traceparent: {{traceparent}}
+}
+
+auth {
+  mode: none
+}
+
+docs {
+  # nId
+  
+  ## Setup
+  
+  To set up, follow these steps:
+  
+  1. Select the desired environment from the top menu.
+  2. Edit the "client-certificate" environment variable to the path of the client certificate you want to use. For example:
+     ```
+     "C:\b\tools\certs\nid-profiles\current.pfx"
+     ```
+}

@@ -1,0 +1,177 @@
+meta {
+  name: 400_POL101_8_incorrect_enddate_clientgegevens
+  type: graphql
+  seq: 7
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Regiehouder(
+    $RegiehouderID: UUID!
+    $Instelling: String!
+    $IngangsDatum: Date!
+    $EindDatum: Date
+    $FakeDate: Date!
+  ) {
+    regiehouder(
+      where: {
+        regiehouderID: { eq: $RegiehouderID }
+        instelling: { eq: $Instelling }
+        ingangsdatum: { eq: $IngangsDatum }
+        einddatum: { eq: $EindDatum }
+      }
+    ) {
+      regiehouderID
+      instelling
+      ingangsdatum
+      einddatum
+      regierol
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          bsn
+          contactpersoon(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $IngangsDatum } }
+                  ]
+                }
+                { ingangsdatum: { ngt: $EindDatum } }
+              ]
+            }
+          ) {
+            contactpersoonID
+            relatienummer
+            volgorde
+            soortRelatie
+            rol
+            relatie
+            geslachtsnaam
+            voorvoegselGeslachtsnaam
+            partnernaam
+            voorvoegselPartnernaam
+            voornamen
+            voorletters
+            roepnaam
+            naamgebruik
+            geslacht
+            geboortedatum
+            geboortedatumgebruik
+            ingangsdatum
+            einddatum
+            contactgegevens(
+              where: {
+                and: [
+                  {
+                    or: [
+                      { einddatum: { eq: null } }
+                      { einddatum: { gte: $IngangsDatum } }
+                    ]
+                  }
+                  { ingangsdatum: { ngt: $FakeDate } }
+                ]
+              }
+            ) {
+              contactpersoonContactgegevensID
+              adressoort
+              straatnaam
+              huisnummer
+              huisletter
+              huisnummertoevoeging
+              postcode
+              plaatsnaam
+              land
+              aanduidingWoonadres
+              emailadres
+              telefoonnummer01
+              landnummer01
+              telefoonnummer02
+              landnummer02
+              ingangsdatum
+              einddatum
+            }
+          }
+          leefeenheid
+          huisarts
+          communicatievorm
+          taal
+          contactgegevens(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $IngangsDatum } }
+                  ]
+                }
+                { ingangsdatum: { ngt: $FakeDate } }
+              ]
+            }
+          ) {
+            clientContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisletter
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            aanduidingWoonadres
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+        }
+      }
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+      "RegiehouderID": "c37239b0-9e3d-4c00-88fd-01f37e590fc0",
+      "Instelling": "51510101",
+      "IngangsDatum": "2020-01-30",
+      "EindDatum": "2021-12-29",
+      "FakeDate": "2027-12-31s"
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains 'ingangsdatum' and
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","agbcode:51510101")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+  
+}

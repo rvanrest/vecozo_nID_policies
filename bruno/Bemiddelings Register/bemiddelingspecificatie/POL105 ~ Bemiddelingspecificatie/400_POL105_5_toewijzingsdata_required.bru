@@ -1,0 +1,105 @@
+meta {
+  name: 400_POL105_5_toewijzingsdata_required
+  type: graphql
+  seq: 5
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Bemiddelingspecificatie(
+    $BemiddelingspecificatieID: UUID!
+    $UitvoerendZorgkantoor: String!
+  ) {
+    bemiddelingspecificatie(
+      where: {
+        bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+        uitvoerendZorgkantoor: { eq: $UitvoerendZorgkantoor }
+      }
+    ) {
+      bemiddelingspecificatieID
+      leveringsvorm
+      zzpCode
+      toewijzingIngangsdatum
+      toewijzingEinddatum
+      instelling
+      uitvoerendZorgkantoor
+      vaststellingMoment
+      percentage
+      opname
+      redenIntrekking
+      etmalen
+      instellingBestemming
+      soortToewijzing
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          bsn
+          clientID
+          taal
+          communicatievorm
+          huisarts
+          leefeenheid
+        }
+        bemiddelingspecificatie {
+          bemiddelingspecificatieID
+          leveringsvorm
+          zzpCode
+          toewijzingIngangsdatum
+          toewijzingEinddatum
+          instelling
+          uitvoerendZorgkantoor
+          vaststellingMoment
+          percentage
+          opname
+          redenIntrekking
+          etmalen
+          instellingBestemming
+          soortToewijzing
+        }
+        regiehouder {
+          regiehouderID
+          instelling
+          ingangsdatum
+          einddatum
+          regierol
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+      "BemiddelingspecificatieID": "821509dc-ff7c-47fc-a262-0c8fb56dadce",
+      "UitvoerendZorgkantoor": "5151"
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains A where 'toewijzingIngangsdatum' equals is required when querying a subentity.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","uzovi:5151")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

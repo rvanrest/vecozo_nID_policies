@@ -1,0 +1,93 @@
+meta {
+  name: 400_POL102_7_bemiddeling_in_client
+  type: graphql
+  seq: 7
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Bemiddelingspecificatie(
+    $BemiddelingspecificatieID: UUID!
+    $Instelling: String!
+  ) {
+    bemiddelingspecificatie(
+      where: {
+        bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+        instelling: { eq: $Instelling }
+      }
+    ) {
+      bemiddelingspecificatieID
+      leveringsvorm
+      zzpCode
+      toewijzingIngangsdatum
+      toewijzingEinddatum
+      instelling
+      uitvoerendZorgkantoor
+      vaststellingMoment
+      percentage
+      opname
+      redenIntrekking
+      etmalen
+      instellingBestemming
+      soortToewijzing
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        # Overige Bemiddelingspecificaties van de bemiddeling mag je niet ophalen zonder datumfilter - zie QBR-0002-ZA.graphql
+        client {
+          bsn
+          clientID
+          taal
+          communicatievorm
+          huisarts
+          leefeenheid
+          # Sub entiteiten van de client mag je niet ophalen zonder datumfilter - zie QBR-0002-ZA.graphql
+          # Bemiddelingen mogen nooit opgevraagd worden via de client
+          bemiddeling {
+            bemiddelingID
+            wlzIndicatieID
+            verantwoordelijkZorgkantoor
+            verantwoordelijkheidIngangsdatum
+            verantwoordelijkheidEinddatum
+          }
+        }
+      }
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+      "BemiddelingspecificatieID": "350bcd35-85ab-4807-b58d-0089d59f3e67",
+      "Instelling": "51510101"
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains Bemiddelingspecificatie query: You may only query your own 'bemiddeling'.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","agbcode:51510101")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

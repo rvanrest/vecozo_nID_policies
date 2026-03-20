@@ -1,0 +1,42 @@
+meta {
+  name: 200_DIRECT_get_all_indicaties_ids
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{graphql-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query GetAllWlzIndicaties {
+    wlzIndicatie {
+      wlzindicatieID
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+    "wlzIndicatieID": "AC0DA41F-19CC-4A42-992B-493996F5D9A0",
+    "initieelVerantwoordelijkZorgkantoor": "5000"
+  }
+}
+
+script:pre-request {
+  // if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+  //   bru.setVar("impersonation","uzovi:5000")
+  // }else{
+  //   bru.setVar("impersonation","")
+  // }
+  // bru.setVar("scope","registers/wlzindicatieregister/indicaties:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  // const requestResponse = await bru.runRequest("token");
+}

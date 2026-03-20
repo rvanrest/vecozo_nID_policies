@@ -1,0 +1,68 @@
+meta {
+  name: 200_DIRECT_get_all_regiehouders
+  type: graphql
+  seq: 5
+}
+
+post {
+  url: {{graphql-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query GetAllRegiehouders {
+    regiehouder
+    regiehouderID
+    instelling
+    ingangsdatum
+    einddatum
+    regierol
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      bemiddelingspecificatie {
+        bemiddelingspecificatieID
+        leveringsvorm
+        zzpCode
+        toewijzingIngangsdatum
+        toewijzingEinddatum
+        instelling
+        uitvoerendZorgkantoor
+        vaststellingMoment
+        percentage
+        opname
+        redenIntrekking
+        etmalen
+        instellingBestemming
+        soortToewijzing
+      }
+      regiehouder {
+        regiehouderID
+        instelling
+        ingangsdatum
+        einddatum
+        regierol
+      }
+    }
+  }
+  
+}
+
+script:pre-request {
+  // if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+  //   bru.setVar("impersonation","uzovi:5000")
+  // }else{
+  //   bru.setVar("impersonation","")
+  // }
+  bru.setVar("scope","registers/wlzindicatieregister/indicaties:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  // const requestResponse = await bru.runRequest("token");
+}

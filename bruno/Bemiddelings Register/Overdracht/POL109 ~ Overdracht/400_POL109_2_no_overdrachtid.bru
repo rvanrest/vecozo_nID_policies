@@ -1,0 +1,90 @@
+meta {
+  name: 400_POL109_2_no_overdrachtid
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Overdracht($VerantwoordelijkZorgkantoor: String!) {
+    overdracht(
+      where: { verantwoordelijkZorgkantoor: { eq: $VerantwoordelijkZorgkantoor } }
+    ) {
+      overdrachtID
+      verantwoordelijkZorgkantoor
+      overdrachtDatum
+      verhuisDatum
+      vaststellingMoment
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        client {
+          clientID
+          bsn
+          leefeenheid
+          huisarts
+          communicatievorm
+          taal
+        }
+      }
+      overdrachtspecificatie {
+        overdrachtspecificatieID
+        leveringsstatus
+        leveringsstatusClassificatie
+        oorspronkelijkeToewijzingEinddatum
+        bemiddelingspecificatie {
+          bemiddelingspecificatieID
+          leveringsvorm
+          zzpCode
+          toewijzingIngangsdatum
+          toewijzingEinddatum
+          instelling
+          uitvoerendZorgkantoor
+          vaststellingMoment
+          percentage
+          opname
+          redenIntrekking
+          etmalen
+          instellingBestemming
+          soortToewijzing
+        }
+      }
+      # overige entiteiten mogen zonder overdachtdatum niet geraadpleegd worden
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+    "VerantwoordelijkZorgkantoor": "5151"
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains A where 'overdrachtID' equals is required and must have a value.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","uzovi:5151")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

@@ -1,0 +1,73 @@
+meta {
+  name: 400_POL100_6_overdracht
+  type: graphql
+  seq: 6
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Regiehouder(
+    $regiehouderID: UUID!
+    $Instelling: String!
+  ) {
+    regiehouder(
+      where: {
+        regiehouderID: { eq: $regiehouderID }
+        instelling: { eq: $Instelling }
+      }
+    ) {
+      regiehouderID
+      instelling
+      ingangsdatum
+      einddatum
+      regierol
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        overdracht {
+          overdrachtID
+          verantwoordelijkZorgkantoor
+          overdrachtDatum
+          verhuisDatum
+          vaststellingMoment
+          overdrachtspecificatie
+          bemiddeling
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "regiehouderID": "c37239b0-9e3d-4c00-88fd-01f37e590fc0",
+    "Instelling": "51510101"
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","agbcode:51510101")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

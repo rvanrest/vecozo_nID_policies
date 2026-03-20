@@ -1,0 +1,153 @@
+meta {
+  name: 400_POL100_5_toewijzingsdata_required
+  type: graphql
+  seq: 6
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Regiehouder(
+    $regiehouderID: UUID!
+    $Instelling: String!
+  ) {
+    regiehouder(
+      where: {
+        regiehouderID: { eq: $regiehouderID }
+        instelling: { eq: $Instelling }
+      }
+    ) {
+      regiehouderID
+      instelling
+      ingangsdatum
+      einddatum
+      regierol
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        bemiddelingspecificatie {
+          bemiddelingspecificatieID
+          leveringsvorm
+          zzpCode
+          toewijzingIngangsdatum
+          toewijzingEinddatum
+          instelling
+          uitvoerendZorgkantoor
+          vaststellingMoment
+          percentage
+          opname
+          redenIntrekking
+          etmalen
+          instellingBestemming
+          soortToewijzing
+        }
+        regiehouder {
+            regiehouderID
+            instelling
+            ingangsdatum
+            einddatum
+            regierol
+          }
+              client {
+          bsn
+          contactpersoon {
+            contactpersoonID
+            relatienummer
+            volgorde
+            soortRelatie
+            rol
+            relatie
+            geslachtsnaam
+            voorvoegselGeslachtsnaam
+            partnernaam
+            voorvoegselPartnernaam
+            voornamen
+            voorletters
+            roepnaam
+            naamgebruik
+            geslacht
+            geboortedatum
+            geboortedatumgebruik
+            ingangsdatum
+            einddatum
+            contactgegevens {
+              contactpersoonContactgegevensID
+              adressoort
+              straatnaam
+              huisnummer
+              huisletter
+              huisnummertoevoeging
+              postcode
+              plaatsnaam
+              land
+              aanduidingWoonadres
+              emailadres
+              telefoonnummer01
+              landnummer01
+              telefoonnummer02
+              landnummer02
+              ingangsdatum
+              einddatum
+            }
+          }
+          leefeenheid
+          huisarts
+          communicatievorm
+          taal
+          contactgegevens {
+            clientContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisletter
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            aanduidingWoonadres
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "regiehouderID": "c37239b0-9e3d-4c00-88fd-01f37e590fc0",
+    "Instelling": "51510101"
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","agbcode:51510101")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

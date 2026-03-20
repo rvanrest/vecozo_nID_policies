@@ -1,0 +1,97 @@
+meta {
+  name: 200_POL101_2_acceptatie_zonder_toewijzingEinddatum
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  query Regiehouder(
+    $RegiehouderID: UUID!
+    $Instelling: String!
+    $IngangsDatum: Date!
+    $EindDatum: Date
+  ) {
+    regiehouder(
+      where: {
+        regiehouderID: { eq: $RegiehouderID }
+        instelling: { eq: $Instelling }
+        ingangsdatum: { eq: $IngangsDatum }
+        einddatum: { eq: $EindDatum}
+      }
+    ) {
+      regiehouderID
+      instelling
+      ingangsdatum
+      einddatum
+      regierol
+      bemiddeling {
+        bemiddelingID
+        wlzIndicatieID
+        verantwoordelijkZorgkantoor
+        verantwoordelijkheidIngangsdatum
+        verantwoordelijkheidEinddatum
+        bemiddelingspecificatie(
+          where: {
+            and: [
+              {
+                or: [
+                  { toewijzingEinddatum: { eq: null } }
+                  { toewijzingEinddatum: { gte: $IngangsDatum } }
+                ]
+              }
+            ]
+          }
+        ) {
+          bemiddelingspecificatieID
+          leveringsvorm
+          zzpCode
+          toewijzingIngangsdatum
+          toewijzingEinddatum
+          instelling
+          uitvoerendZorgkantoor
+          vaststellingMoment
+          percentage
+          opname
+          redenIntrekking
+          etmalen
+          instellingBestemming
+          soortToewijzing
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+      "RegiehouderID": "40295ff7-2160-408f-8393-c8545f10c172",
+      "Instelling": "51510101",
+      "IngangsDatum": "2021-08-01",
+      "EindDatum": null
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","agbcode:51510101")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","registers/wlzbemiddelingsregister/bemiddelingen/bemiddeling:read")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}

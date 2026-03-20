@@ -1,0 +1,13 @@
+vars {
+  vec-base: tst-api.vecozo.nl
+  vec-apim: https://{{vec-base}}/tst
+  pep-url: {{vec-apim}}/netwerkmodel/v3/pep/
+  graphql-url-bemreg: https://tst-api.vecozo.nl/tst/bemiddelingsregister/v1/graphql
+  graphql-url-indicreg: https://koppelpunt.test.ciz.nl/iwlz/indicatieregister/v2/graphql
+  graphql-url-notif: https://tst-api.vecozo.nl/tst/netwerkmodelnotificatieservice/v1/graphql
+  token_url: {{vec-apim}}/netwerkmodel/v3/auth
+}
+vars:secret [
+  client-certificate-password,
+  client-certificate
+]

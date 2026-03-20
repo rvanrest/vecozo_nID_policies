@@ -1,0 +1,104 @@
+meta {
+  name: 400_POL213_2_naar_zorgaanbieder
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{pep-url}}
+  body: graphql
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:graphql {
+  mutation ZendMelding($MeldingInput: MeldingInput!) {
+    zendMelding(meldingInput: $MeldingInput) {
+      eventType
+    }
+  }
+  
+}
+
+body:graphql:vars {
+  {
+    "MeldingInput": {
+      "afzenderID": "18065868",
+      "afzenderIDType": "KVK",
+      "eventType": "iWLZFOUTMELDING",
+      "ontvangerID": "51510101",
+      "ontvangerIDType": "AGB",
+      "ontvangerKenmerk": "Zorgaanbieder",
+      "subjectList": [
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        },
+        {
+          "recordID": "Bemiddelingspecificatie/a89d0322-a5f0-4c78-8d44-95effd3c79be",
+          "subject": "0328"
+        }
+      ],
+      "timestamp": "2025-06-02T12:32:57.4410000Z"
+    }
+  }
+}
+
+assert {
+  res.status: eq 400
+  JSON.stringify(res.body): contains ontvanger is not valid.
+}
+
+script:pre-request {
+  if(req.getExecutionMode() == "runner" || bru.getEnvVar("impersonation") || bru.getGlobalEnvVar("impersonation")){
+    bru.setVar("impersonation","kvk:18065868")
+  }else{
+    bru.setVar("impersonation","")
+  }
+  bru.setVar("scope","organisaties/zorgkantoor/meldingen/melding:create")
+  bru.setVar("graphql-url", bru.getFolderVar("graphql-url"))
+  const requestResponse = await bru.runRequest("token");
+}
